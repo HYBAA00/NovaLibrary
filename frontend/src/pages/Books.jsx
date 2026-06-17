@@ -47,6 +47,7 @@ export default function Books() {
       const res = await api.get('/books', { params })
       setBooks(collection(res.data))
       setPagination(meta(res.data))
+      setError('')
       setSearchParams(Object.fromEntries(Object.entries(params).filter(([, value]) => value)))
     } catch (err) {
       setBooks([])
