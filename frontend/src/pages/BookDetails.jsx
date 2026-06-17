@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Heart, ListPlus, Star } from 'lucide-react'
+import { ArrowLeft, BookOpen, Heart, ListPlus, Sparkles, Star } from 'lucide-react'
 import api from '../services/api'
 import AppHeader from '../components/AppHeader'
 import { AuthContext } from '../context/AuthContext'
@@ -25,6 +25,8 @@ export default function BookDetails() {
   const [lists, setLists] = React.useState([])
   const [newList, setNewList] = React.useState('')
   const [feedback, setFeedback] = React.useState('')
+  const [aiSummary, setAiSummary] = React.useState('')
+  const [aiLoading, setAiLoading] = React.useState(false)
 
   React.useEffect(() => {
     load()
@@ -114,6 +116,20 @@ export default function BookDetails() {
     setTimeout(() => setFeedback(''), 1200)
   }
 
+  async function summarizeWithAi() {
+    if (!user) return navigate('/login')
+    setAiLoading(true)
+    setFeedback('')
+    try {
+      const res = await api.post(`/ai/books/${id}/summary`)
+      setAiSummary(res.data?.summary || '')
+    } catch (err) {
+      setFeedback(err.response?.data?.message || 'Resume IA indisponible')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   const userHasReviewed = user && reviews.some(review => String(review.user_id) === String(user.id))
   const pdfUrl = assetUrl(book?.file_url)
   const cover = assetUrl(book?.cover_url)
@@ -159,9 +175,21 @@ export default function BookDetails() {
                   <button className="button button-secondary" onClick={openLists}>
                     <ListPlus size={18} /> Ajouter a une liste
                   </button>
+                  <button className="button button-secondary ai-pulse" onClick={summarizeWithAi} disabled={aiLoading}>
+                    <Sparkles size={18} /> {aiLoading ? 'IA...' : 'Resume IA'}
+                  </button>
                 </div>
               </div>
             </section>
+
+            {aiSummary && (
+              <section className="section" style={{ paddingBottom: 0 }}>
+                <div className="panel ai-summary">
+                  <span className="eyebrow"><Sparkles size={16} /> Analyse Mistral</span>
+                  <div className="message assistant" style={{ marginTop: 14, maxWidth: '100%' }}>{aiSummary}</div>
+                </div>
+              </section>
+            )}
 
             <section className="section" ref={readerRef}>
               <div className="section-header">

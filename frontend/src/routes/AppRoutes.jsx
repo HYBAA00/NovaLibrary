@@ -9,6 +9,8 @@ import Profile from '../pages/Profile'
 import AdminPanel from '../pages/AdminPanel'
 import Chatbot from '../pages/Chatbot'
 import Contact from '../pages/Contact'
+import LiveChat from '../pages/LiveChat'
+import QuizArena from '../pages/QuizArena'
 import { AuthContext } from '../context/AuthContext'
 
 const RequireAuth = ({ children }) => {
@@ -35,6 +37,8 @@ export default function AppRoutes(){
       <Route path="/contact" element={<Contact/>} />
       <Route path="/admin" element={<RequireAdmin><AdminPanel/></RequireAdmin>} />
       <Route path="/chat" element={<Chatbot/>} />
+      <Route path="/live-chat" element={<RequireAuth><LiveChat/></RequireAuth>} />
+      <Route path="/quiz" element={<RequireAuth><QuizArena/></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

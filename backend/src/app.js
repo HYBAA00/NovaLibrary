@@ -16,6 +16,9 @@ const favoritesRoutes = require('./routes/favorites.routes');
 const readingStatusRoutes = require('./routes/reading_status.routes');
 const readingListsRoutes = require('./routes/reading_lists.routes');
 const bookRequestsRoutes = require('./routes/book_requests.routes');
+const aiRoutes = require('./routes/ai.routes');
+const quizRoutes = require('./routes/quiz.routes');
+const liveChatRoutes = require('./routes/live_chat.routes');
 const errorMiddleware = require('./middleware/error.middleware');
 
 const app = express();
@@ -73,6 +76,9 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/reading-status', readingStatusRoutes);
 app.use('/api/reading-lists', readingListsRoutes);
 app.use('/api/book-requests', bookRequestsRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/live-chat', liveChatRoutes);
 
 app.use((req, res) => {
 	res.status(404).json({ message: 'Route introuvable' });

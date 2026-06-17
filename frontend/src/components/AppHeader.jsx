@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, Bot, LayoutDashboard, Library, LogOut, Shield, User } from 'lucide-react'
+import { BookOpen, Bot, BrainCircuit, LayoutDashboard, Library, LogOut, Radio, Shield, User } from 'lucide-react'
 import { AuthContext } from '../context/AuthContext'
 
 export default function AppHeader() {
@@ -17,6 +17,8 @@ export default function AppHeader() {
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/books', label: 'Catalogue', icon: Library },
         { to: '/chat', label: 'Assistant', icon: Bot },
+        { to: '/live-chat', label: 'Live', icon: Radio },
+        { to: '/quiz', label: 'QCM', icon: BrainCircuit },
         { to: '/profile', label: 'Profil', icon: User },
       ]
     : [

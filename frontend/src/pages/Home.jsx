@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Bot, Library, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Bot, BrainCircuit, Library, Radio, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import api from '../services/api'
 import AppHeader from '../components/AppHeader'
 import BookCard from '../components/BookCard'
@@ -43,6 +43,9 @@ export default function Home() {
               </Link>
               <Link className="button button-secondary" to={user ? '/dashboard' : '/login'}>
                 {user ? 'Ouvrir mon espace' : 'Commencer'}
+              </Link>
+              <Link className="button button-secondary" to={user ? '/quiz' : '/login'}>
+                QCM ranking <BrainCircuit size={18} />
               </Link>
             </div>
           </div>
@@ -98,11 +101,18 @@ export default function Home() {
             {[
               ['Catalogue avance', 'Recherche, tri, categories, notes et popularite.'],
               ['Espace lecteur', 'Favoris, listes personnelles et statuts de lecture.'],
+              ['Live chat', 'Discussion en temps reel entre lecteurs connectes.'],
+              ['QCM ranking', 'Mistral genere des quiz, points et classement global.'],
               ['Administration', 'Gestion des livres, auteurs, categories, avis et demandes.'],
               ['Qualite API', 'Validation, securite, health check, pagination et erreurs propres.'],
-            ].map(([title, body]) => (
+            ].map(([title, body], index) => (
               <div className="panel" key={title}>
-                <h3 style={{ marginTop: 0 }}>{title}</h3>
+                <h3 style={{ marginTop: 0, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {index === 2 && <Radio size={18} />}
+                  {index === 3 && <BrainCircuit size={18} />}
+                  {index === 5 && <Bot size={18} />}
+                  {title}
+                </h3>
                 <p className="muted">{body}</p>
               </div>
             ))}
