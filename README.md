@@ -28,6 +28,13 @@ Default API URL: `http://localhost:4000`
 
 Health check: `http://localhost:4000/health`
 
+Import local uploaded PDFs/covers into MySQL:
+
+```bash
+cd backend
+npm run seed:uploads
+```
+
 AI setup:
 
 ```env
