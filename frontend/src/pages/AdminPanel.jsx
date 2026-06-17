@@ -1,5 +1,6 @@
 import React from 'react'
 import api from '../services/api'
+import { assetUrl, collection } from '../utils/format'
 
 export default function AdminPanel(){
   const accent = '#F5A623'
@@ -15,6 +16,7 @@ export default function AdminPanel(){
   const [categories, setCategories] = React.useState([])
   const [authors, setAuthors] = React.useState([])
   const [reviews, setReviews] = React.useState([])
+  const [requests, setRequests] = React.useState([])
   const [stats, setStats] = React.useState({})
 
   const [modalOpen, setModalOpen] = React.useState(false)
@@ -37,18 +39,19 @@ export default function AdminPanel(){
 
   const fetchAll = async ()=>{
     try{
-      const [sRes, bRes, booksStatsRes, usersStatsRes, cRes, aRes, revRes] = await Promise.all([
+      const [sRes, bRes, booksStatsRes, usersStatsRes, cRes, aRes, revRes, reqRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/books'),
         api.get('/admin/books-stats'),
         api.get('/admin/users-stats'),
         api.get('/categories'),
         api.get('/authors'),
-        api.get('/reviews/all')
+        api.get('/reviews/all'),
+        api.get('/book-requests').catch(() => ({ data: [] }))
       ])
       setStats(sRes.data || {})
       // merge books with stats
-      const booksData = bRes.data || []
+      const booksData = collection(bRes.data)
       const booksStats = booksStatsRes.data || []
       const booksMap = {}
       booksStats.forEach(s=> { booksMap[s.id] = s })
@@ -57,6 +60,7 @@ export default function AdminPanel(){
       setCategories(cRes.data || [])
       setAuthors(aRes.data || [])
       setReviews(revRes.data || [])
+      setRequests(reqRes.data || [])
     }catch(e){
       console.error('fetchAll error', e)
     }
@@ -76,6 +80,7 @@ export default function AdminPanel(){
       {k:'categories', label:'Categories'},
       {k:'authors', label:'Authors'},
       {k:'reviews', label:'Reviews'},
+      {k:'requests', label:'Requests'},
     ]
     return (
       <header style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:14,background:'#111',borderBottom:`1px solid ${cardBorder}`}}>
@@ -109,7 +114,6 @@ export default function AdminPanel(){
   const openEditBook = (b)=>{
     setModalEntity('book')
     setModalMode('edit')
-    setFormData({ ...b })
 
     const catName = b.category_name || b.category || ''
     if (categories.some(c => c.name === catName)) {
@@ -125,6 +129,12 @@ export default function AdminPanel(){
       setSelectedAuthor(''); setNewAuthor(authName)
     }
 
+    setFormData({
+      ...b,
+      author: authName,
+      category: catName,
+      published_at: b.published_date ? String(b.published_date).slice(0, 10) : '',
+    })
     setPdfFile(null); setCoverFile(null); setModalOpen(true)
   }
   const submitBook = async (e)=>{
@@ -189,6 +199,13 @@ export default function AdminPanel(){
     }catch(e){ console.error(e); alert('Erreur') }
   }
 
+  const updateRequestStatus = async (id, status)=>{
+    try{
+      await api.patch(`/book-requests/${id}/status`, { status })
+      fetchAll()
+    }catch(e){ console.error(e); alert('Erreur') }
+  }
+
   const formatDate = (date)=>{
     if (!date) return 'Non définie'
     return new Date(date).toLocaleDateString('fr-FR')
@@ -200,7 +217,7 @@ export default function AdminPanel(){
       <div style={{padding:24}}>
         <main style={{maxWidth:1200,margin:'0 auto'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
-            <h2 style={{margin:0}}>{active==='dashboard' ? 'Tableau de bord' : active==='books' ? 'Livres' : active==='users' ? 'Utilisateurs' : active==='categories' ? 'Catégories' : active==='authors' ? 'Auteurs' : 'Reviews'}</h2>
+            <h2 style={{margin:0}}>{active==='dashboard' ? 'Tableau de bord' : active==='books' ? 'Livres' : active==='users' ? 'Utilisateurs' : active==='categories' ? 'Categories' : active==='authors' ? 'Auteurs' : active==='requests' ? 'Demandes' : 'Reviews'}</h2>
             {active==='books' && <button onClick={openAddBook} style={{background:accent,color:'#000',border:'none',padding:'10px 14px',borderRadius:8,cursor:'pointer',fontWeight:700}}>Ajouter</button>}
           </div>
 
@@ -267,7 +284,7 @@ export default function AdminPanel(){
                           <td style={{padding:12,color:textMuted}}>{b.author_name || b.author}</td>
                           <td style={{padding:12}}>{b.category_name || b.category}</td>
                           <td style={{padding:12,color:textMuted}}>{formatDate(b.published_date)}</td>
-                          <td style={{padding:12}}>{b.file_url ? <button onClick={()=>window.open('http://localhost:5000/' + ((b.file_url||'').replace(/^\/+/, '').replace('/uploads/pdfs/', '/uploads/books/') || ''), '_blank')} style={{background:accent,color:'#000',border:'none',padding:'6px 8px',borderRadius:8}}>Voir PDF</button> : '-'}</td>
+                          <td style={{padding:12}}>{b.file_url ? <button onClick={()=>window.open(assetUrl(b.file_url), '_blank')} style={{background:accent,color:'#000',border:'none',padding:'6px 8px',borderRadius:8}}>Voir PDF</button> : '-'}</td>
                           <td style={{padding:12}}>
                             <div style={{display:'flex',gap:8,alignItems:'center'}}>
                               <span style={{background:'rgba(245,166,35,0.12)',color:accent,padding:'4px 8px',borderRadius:999,fontWeight:700}}>En lecture: {b.reading_count ?? 0}</span>
@@ -406,6 +423,50 @@ export default function AdminPanel(){
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {active==='requests' && (
+            <section>
+              <div style={{marginBottom:12}}>
+                <h3 style={{margin:0}}>Demandes de livres</h3>
+              </div>
+              <div style={{background:cardBg,border:`1px solid ${cardBorder}`,borderRadius:12,overflow:'hidden'}}>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead style={{background:'#0f0f0f',color:textMuted}}>
+                    <tr>
+                      <th style={{padding:12,textAlign:'left'}}>Titre</th>
+                      <th style={{padding:12,textAlign:'left'}}>Auteur</th>
+                      <th style={{padding:12,textAlign:'left'}}>Utilisateur</th>
+                      <th style={{padding:12,textAlign:'left'}}>Note</th>
+                      <th style={{padding:12,textAlign:'left'}}>Statut</th>
+                      <th style={{padding:12,textAlign:'left'}}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requests.map((r,i)=> (
+                      <tr key={r.id} style={{background: i%2===0? '#1a1a1a':'#161616'}}>
+                        <td style={{padding:12}}>{r.title}</td>
+                        <td style={{padding:12,color:textMuted}}>{r.author || '-'}</td>
+                        <td style={{padding:12,color:textMuted}}>{r.user_name || r.user_email}</td>
+                        <td style={{padding:12,color:'#c0c0c0',maxWidth:320}}>{r.note || '-'}</td>
+                        <td style={{padding:12}}>
+                          <select value={r.status} onChange={(e)=>updateRequestStatus(r.id, e.target.value)} style={{background:cardBg,border:`1px solid ${cardBorder}`,color:text,padding:8,borderRadius:8}}>
+                            <option value="pending">pending</option>
+                            <option value="approved">approved</option>
+                            <option value="rejected">rejected</option>
+                            <option value="fulfilled">fulfilled</option>
+                          </select>
+                        </td>
+                        <td style={{padding:12,color:textMuted}}>{r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '-'}</td>
+                      </tr>
+                    ))}
+                    {requests.length === 0 && (
+                      <tr><td colSpan="6" style={{padding:18,color:textMuted,textAlign:'center'}}>Aucune demande pour le moment.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>

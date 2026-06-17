@@ -1,73 +1,89 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { BookOpen } from 'lucide-react'
 import api from '../services/api'
 import { AuthContext } from '../context/AuthContext'
 
-export default function AuthPage(){
-  const accent = '#F5A623'
-  const bg = '#0a0a0a'
-  const text = '#ffffff'
-  const cardBg = '#1a1a1a'
-  const border = '#2a2a2a'
-
-  const [mode,setMode] = React.useState('login')
-  const [email,setEmail] = React.useState('')
-  const [password,setPassword] = React.useState('')
-  const [error,setError] = React.useState('')
-  const [loading,setLoading] = React.useState(false)
-
+export default function AuthPage() {
   const navigate = useNavigate()
   const { login } = React.useContext(AuthContext)
+  const [mode, setMode] = React.useState('login')
+  const [name, setName] = React.useState('')
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [error, setError] = React.useState('')
+  const [loading, setLoading] = React.useState(false)
 
-  const handleLogin = async (e)=>{
+  async function submit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
-    try{
-      const res = await api.post('/auth/login', { email, password })
-      const token = res.data?.token || res.data?.accessToken || res.data?.access_token
-      if(!token) throw new Error('Token non reçu')
-      // store token via AuthContext
-      login({}, token)
-      // decode payload to read role
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      const role = payload?.role || payload?.roles || 'USER'
-      if(role === 'ADMIN') navigate('/admin')
-      else navigate('/dashboard')
-    }catch(err){
-      setError(err.response?.data?.message || err.message || 'Erreur lors de la connexion')
-    }finally{ setLoading(false) }
-  }
 
-  const submit = (e)=>{
-    if(mode==='login') return handleLogin(e)
-    e.preventDefault()
-    // registration left unchanged (simple behavior)
-    setError('')
-    alert('Inscription désactivée dans cette démo')
+    try {
+      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register'
+      const payload = mode === 'login' ? { email, password } : { name, email, password }
+      const res = await api.post(endpoint, payload)
+      const token = res.data?.token
+      if (!token) throw new Error('Token non recu')
+
+      login(res.data?.user || {}, token)
+      const role = res.data?.user?.role || 'USER'
+      navigate(role === 'ADMIN' ? '/admin' : '/dashboard')
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Action impossible pour le moment')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div style={{minHeight:'100vh',background:bg,color:text,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Inter, system-ui'}}>
-      <div style={{position:'absolute',top:24,left:24,color:accent,fontWeight:800}}>NovaLibrary</div>
-      <div style={{width:420,background:cardBg,border:`1px solid ${border}`,padding:28,borderRadius:12}}>
-        <div style={{textAlign:'center',color:accent,fontWeight:800,fontSize:28,marginBottom:18}}>NovaLibrary</div>
-        <h2 style={{marginTop:0}}>{mode==='login' ? 'Se connecter' : "S'inscrire"}</h2>
-        <form onSubmit={submit}>
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            <label style={{color:text, fontWeight:700}}>Email</label>
-            <input type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="email@exemple.com" style={{background:cardBg,border:`1px solid ${border}`,color:text,padding:10,borderRadius:8}} />
-            <label style={{color:text,fontWeight:700}}>Mot de passe</label>
-            <input type="password" required value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Votre mot de passe" style={{background:cardBg,border:`1px solid ${border}`,color:text,padding:10,borderRadius:8}} />
-            <button type="submit" style={{background:accent,color:'#000',padding:12,borderRadius:8,border:'none',fontWeight:800,cursor:'pointer'}} disabled={loading || !email.trim() || !password.trim()}>{mode==='login'? (loading? 'Connexion...' : 'Se connecter') : "S'inscrire"}</button>
-          </div>
+    <div className="auth-page">
+      <div className="auth-card">
+        <Link to="/" className="brand" style={{ marginBottom: 20 }}>
+          <span className="brand-mark"><BookOpen size={20} /></span>
+          <span>NovaLibrary</span>
+        </Link>
+
+        <h1>{mode === 'login' ? 'Connexion' : 'Creer un compte'}</h1>
+        <p className="muted" style={{ marginTop: 8 }}>
+          {mode === 'login'
+            ? 'Accedez a votre bibliotheque personnelle.'
+            : 'Le premier compte cree devient administrateur automatiquement.'}
+        </p>
+
+        <form onSubmit={submit} className="form-stack" style={{ marginTop: 18 }}>
+          {mode === 'register' && (
+            <label className="form-stack">
+              <span>Nom complet</span>
+              <input className="input" value={name} onChange={e => setName(e.target.value)} required placeholder="Votre nom" />
+            </label>
+          )}
+
+          <label className="form-stack">
+            <span>Email</span>
+            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="email@exemple.com" />
+          </label>
+
+          <label className="form-stack">
+            <span>Mot de passe</span>
+            <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} placeholder="8 caracteres minimum" />
+          </label>
+
+          <button className="button button-primary" type="submit" disabled={loading}>
+            {loading ? 'Veuillez patienter...' : mode === 'login' ? 'Se connecter' : 'Creer le compte'}
+          </button>
         </form>
 
-        {error && <div style={{marginTop:12,color:'#fecaca',background:'#3b0b0b',padding:10,borderRadius:8}}>{error}</div>}
+        {error && <div className="alert" style={{ marginTop: 14 }}>{error}</div>}
 
-        <div style={{marginTop:12,textAlign:'center',color:'#a0a0a0'}}>
-          <a href="#" onClick={(e)=>{e.preventDefault(); setMode(mode==='login'?'register':'login'); setError('')}} style={{color:accent,textDecoration:'none'}}>{mode==='login'? 'Créer un compte' : 'Déjà un compte ? Se connecter'}</a>
-        </div>
+        <button
+          type="button"
+          className="button button-secondary"
+          style={{ width: '100%', marginTop: 12 }}
+          onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+        >
+          {mode === 'login' ? 'Je veux creer un compte' : 'J ai deja un compte'}
+        </button>
       </div>
     </div>
   )

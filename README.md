@@ -1,29 +1,44 @@
-# Digital Library (scaffold)
+# NovaLibrary
 
-Structure scaffold for a digital library (Node.js + React).
+NovaLibrary is a full-stack digital library built with Node.js, Express, MySQL, React and Vite.
 
-Quick setup:
+## Highlights
 
-Backend
+- Secure authentication with JWT and role-based admin access.
+- Public catalogue with search, category filters, sorting and pagination.
+- PDF reader, covers, reviews, ratings, favorites and reading status.
+- Personal reading lists.
+- Admin dashboard for books, users, authors, categories, reviews and book requests.
+- Book request workflow for readers.
+- Catalogue-aware chatbot assistant.
+- Hardened API with Helmet, compression, rate limiting, health check and clean errors.
 
-1. Copy `.env.example` to `.env` and set values (MySQL credentials, JWT secret).
-2. From `backend/` run:
+## Backend
 
 ```bash
+cd backend
+copy .env.example .env
 npm install
 npm run dev
 ```
 
-Frontend
+Default API URL: `http://localhost:4000`
 
-1. Copy `.env.example` to `.env` in `frontend/` and set `VITE_API_URL`.
-2. From `frontend/` run:
+Health check: `http://localhost:4000/health`
+
+## Frontend
 
 ```bash
+cd frontend
+copy .env.example .env
 npm install
 npm run dev
 ```
 
-Database
+Default frontend URL: `http://localhost:5173`
 
-Run the SQL script `sql/init_db.sql` in DBeaver to create the database and tables.
+## Database
+
+Run `sql/init_db.sql` in MySQL/DBeaver to create the database and tables.
+
+The first registered user becomes `ADMIN`; all later registrations become `USER`.

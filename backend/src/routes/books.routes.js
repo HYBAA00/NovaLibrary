@@ -6,8 +6,8 @@ const upload = require('../config/upload');
 
 router.get('/', controller.list);
 router.get('/:id', controller.getById);
-router.post('/', auth.verifyToken, upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), controller.create);
-router.put('/:id', auth.verifyToken, upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), controller.update);
-router.delete('/:id', auth.verifyToken, controller.remove);
+router.post('/', auth.verifyToken, auth.requireRole('ADMIN'), upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), controller.create);
+router.put('/:id', auth.verifyToken, auth.requireRole('ADMIN'), upload.fields([{ name: 'pdf', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), controller.update);
+router.delete('/:id', auth.verifyToken, auth.requireRole('ADMIN'), controller.remove);
 
 module.exports = router;

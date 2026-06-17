@@ -18,10 +18,30 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, unique + ext);
   }
 });
 
-const upload = multer({ storage });
+const allowed = {
+  pdf: ['application/pdf'],
+  cover: ['image/jpeg', 'image/png', 'image/webp'],
+};
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 60 * 1024 * 1024,
+    files: 2,
+  },
+  fileFilter(req, file, cb) {
+    const allowedForField = allowed[file.fieldname];
+    if (!allowedForField) return cb(new Error('Champ fichier invalide'));
+    if (!allowedForField.includes(file.mimetype)) {
+      return cb(new Error(file.fieldname === 'pdf' ? 'Le fichier doit etre un PDF' : 'La couverture doit etre une image JPG, PNG ou WebP'));
+    }
+    cb(null, true);
+  },
+});
 
 module.exports = upload;

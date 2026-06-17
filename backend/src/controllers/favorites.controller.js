@@ -3,7 +3,18 @@ const pool = require('../config/db');
 exports.list = async (req, res, next) => {
   try {
     const [rows] = await pool.query(
-      'SELECT b.*, f.created_at as favorited_at FROM favorites f JOIN books b ON b.id = f.book_id WHERE f.user_id = ?',
+      `SELECT b.*, f.created_at AS favorited_at,
+        COALESCE(GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ', '), '') AS author_name,
+        COALESCE(GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', '), '') AS category_name
+       FROM favorites f
+       JOIN books b ON b.id = f.book_id
+       LEFT JOIN book_authors ba ON ba.book_id = b.id
+       LEFT JOIN authors a ON a.id = ba.author_id
+       LEFT JOIN book_categories bc ON bc.book_id = b.id
+       LEFT JOIN categories c ON c.id = bc.category_id
+       WHERE f.user_id = ?
+       GROUP BY b.id, f.created_at
+       ORDER BY f.created_at DESC`,
       [req.user.id]
     );
     res.json(rows);
@@ -14,6 +25,8 @@ exports.add = async (req, res, next) => {
   try {
     const { book_id } = req.body;
     if (!book_id) return res.status(400).json({ message: 'book_id required' });
+    const [book] = await pool.query('SELECT id FROM books WHERE id = ? LIMIT 1', [book_id]);
+    if (!book.length) return res.status(404).json({ message: 'Livre introuvable' });
     await pool.query('INSERT IGNORE INTO favorites (user_id, book_id, created_at) VALUES (?, ?, NOW())', [req.user.id, book_id]);
     res.status(201).json({ ok: true });
   } catch (e) { console.error('favorites.add', e); next(e); }

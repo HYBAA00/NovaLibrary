@@ -40,7 +40,7 @@ exports.create = async (req, res, next) => {
       [userId, book_id]
     );
     if (existing.length > 0) {
-      return res.status(400).json({ message: 'Vous avez déjà laissé un avis pour ce livre' });
+      return res.status(400).json({ message: 'Vous avez deja laisse un avis pour ce livre' });
     }
     const [result] = await pool.query(
       'INSERT INTO reviews (user_id, book_id, rating, comment) VALUES (?, ?, ?, ?)',
@@ -63,7 +63,7 @@ exports.remove = async (req, res, next) => {
       return res.status(404).json({ message: 'Review introuvable' });
     }
     if (String(rows[0].user_id) !== String(userId) && userRole !== 'ADMIN') {
-      return res.status(403).json({ message: 'Non autorisé' });
+      return res.status(403).json({ message: 'Non autorise' });
     }
     await pool.query('DELETE FROM reviews WHERE id = ?', [id]);
     res.status(204).end();
